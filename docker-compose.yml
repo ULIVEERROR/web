@@ -1,0 +1,64 @@
+services:
+  api:
+    build: 
+      context: ./api
+      dockerfile: Dockerfile.prod
+    environment:
+      - PORT=3001
+      - HOST=0.0.0.0
+      - DB_URL=postgres://postgres_user:postgres_password@api_db:5432/test_database
+    depends_on:
+      api_db:
+        condition: service_started
+        required: true
+    networks:
+      - webnet
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    environment:
+      - REACT_APP_API_URL=/api
+    volumes:
+      - frontend_build:/app/frontend/dist
+    depends_on:
+      api:
+        condition: service_started
+        required: true
+    networks:
+      - webnet
+  api_db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres_user
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: test_database
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - webnet
+  nginx:
+    build: 
+      context: ./nginx
+      dockerfile: Dockerfile.prod
+    ports:
+      - "80:80"
+    volumes:
+      - frontend_build:/usr/share/nginx/html/
+    depends_on:
+      frontend:
+        condition: service_completed_successfully
+        required: true
+      api:
+        condition: service_started
+        required: true
+    networks:
+      - webnet
+volumes:
+  db_data:
+  frontend_build:
+networks:
+  webnet:
+    driver: bridge

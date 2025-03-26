@@ -1,0 +1,23 @@
+services:
+  api:
+    build: 
+      context: ./api
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./api:/app/api
+      - /app/api/node_modules
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend:/app/frontend
+      - /app/frontend/node_modules
+  nginx:
+    build: 
+      context: ./nginx
+      dockerfile: Dockerfile.dev
+    depends_on:
+      frontend:
+        condition: service_started
+        required: true
